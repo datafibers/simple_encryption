@@ -2,7 +2,6 @@ package com.datafibers.cdf.utils;
 
 import com.sun.crypto.provider.SunJCE;
 import org.apache.commons.lang3.StringUtils;
-
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
@@ -165,7 +164,7 @@ public class AESUtil {
     public static String encryptPasswordBased(String plainText, SecretKey key, IvParameterSpec iv)
         throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
         InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        Cipher cipher = Cipher.getInstance(PasswordUtilConstant.DEFAULT_CIPHER_PADDING_ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, key, iv);
         return Base64.getEncoder()
             .encodeToString(cipher.doFinal(plainText.getBytes()));
@@ -174,7 +173,7 @@ public class AESUtil {
     public static String decryptPasswordBased(String cipherText, SecretKey key, IvParameterSpec iv)
         throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
         InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        Cipher cipher = Cipher.getInstance(PasswordUtilConstant.DEFAULT_CIPHER_PADDING_ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, key, iv);
         return new String(cipher.doFinal(Base64.getDecoder()
             .decode(cipherText)));
@@ -182,7 +181,7 @@ public class AESUtil {
 
     public static void main(final String[] args) {
         if (args.length < 2) {
-            logger.info("Usage: java KeyFileGen <key file path> <number of keys>");
+            logger.info("Usage: java AESUtil <key file path> <number of keys>");
             System.exit(0);
         }
 
