@@ -60,8 +60,7 @@ public class AESUtil {
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         // 128 -> 256
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 128);
-        SecretKey secret = new SecretKeySpec(factory.generateSecret(spec)
-            .getEncoded(), "AES");
+        SecretKey secret = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
         return secret;
     }
 
@@ -166,8 +165,7 @@ public class AESUtil {
         InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         Cipher cipher = Cipher.getInstance(PasswordUtilConstant.DEFAULT_CIPHER_PADDING_ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, key, iv);
-        return Base64.getEncoder()
-            .encodeToString(cipher.doFinal(plainText.getBytes()));
+        return Base64.getEncoder().encodeToString(cipher.doFinal(plainText.getBytes()));
     }
 
     public static String decryptPasswordBased(String cipherText, SecretKey key, IvParameterSpec iv)
@@ -175,8 +173,7 @@ public class AESUtil {
         InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         Cipher cipher = Cipher.getInstance(PasswordUtilConstant.DEFAULT_CIPHER_PADDING_ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, key, iv);
-        return new String(cipher.doFinal(Base64.getDecoder()
-            .decode(cipherText)));
+        return new String(cipher.doFinal(Base64.getDecoder().decode(cipherText)));
     }
 
     public static void main(final String[] args) {
