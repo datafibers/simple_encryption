@@ -1,5 +1,8 @@
-package com.datafibers.cdf.utils;
+package com.datafibers.aes;
 
+/**
+ * @author will
+ */
 public class PasswordUtilConstant {
     /**
      * key length = 128 bit/16 byte

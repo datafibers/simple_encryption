@@ -8,7 +8,7 @@ It uses secret key, iv with proper padding for detailed implementation.
 ```shell
 java -jar simple_encryption.jar AESUtil dev 31
 ```
-2. Distribute the file to hdfs and web server accessible locations
+2. Distribute the file to where application can access or github with Spring Cloud Config.
 
 ## Encryption from Application
 1. Read all key files to keyCache with
@@ -55,4 +55,7 @@ It creates additional 5 keys starting from version 31
 ```java
 java -jar simple_encryption.jar AESUtil dev 5 31 
 ```
-   
+
+## Format
+* The default key file format is version (3 byte), key (16 byte/128 bit), and iv (16 byte/128 bit).
+* The cipher text format is version (3 byte), cipher text.

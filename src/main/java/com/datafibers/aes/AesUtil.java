@@ -1,4 +1,4 @@
-package com.datafibers.cdf.utils;
+package com.datafibers.aes;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +38,8 @@ public class AesUtil {
     }
 
     /**
-     * ncrypt the data and add the key version to the encrypt data
+     * encrypt the data and add the key version to the encrypt data
+     *
      * @param input
      * @param key
      * @param iv
@@ -211,6 +212,11 @@ public class AesUtil {
         return new String(cipher.doFinal(Base64.getDecoder().decode(cipherText)));
     }
 
+    /**
+     * Generate pass file with specified version
+     * @param keyFileName
+     * @param version
+     */
     public static void genKeyFile(String keyFileName, int version) {
         try {
             SecretKey localSecretKey = generateKey(PasswordUtilConstant.DEFAULT_AES_KEY_LENGTH);
@@ -235,6 +241,12 @@ public class AesUtil {
         }
     }
 
+    /**
+     * Read and cache all pass files
+     * @param pwdFilePath
+     * @param hm
+     * @throws IOException
+     */
     public static void cacheKeyFromFile(final String pwdFilePath, HashMap<String, byte[]> hm) throws IOException {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(conf);
@@ -252,15 +264,23 @@ public class AesUtil {
     }
 
     public static void cacheKeyFromFolders(final String pwdFileFolder, HashMap<String, byte[]> hm) throws IOException {
-        Files.list(Paths.get(pwdFileFolder)).forEach(x -> {
+        Configuration conf = new Configuration();
+        FileSystem fs = FileSystem.get(conf);
+
+        Arrays.stream(fs.listStatus(new Path(pwdFileFolder))).forEach(x -> {
             try {
-                cacheKeyFromFile(x.toString(), hm);
+                cacheKeyFromFile(x.getPath().toString(), hm);
             } catch (IOException ioe) {
                 System.out.println("Error: cannot read from password file.");
             }
         });
     }
 
+    /**
+     * Get secret from pass file bytes
+     * @param passByte
+     * @return
+     */
     public static SecretKeySpec getKeyFromPassByte(byte[] passByte) {
         byte[] versionByte = new byte[PasswordUtilConstant.DEFAULT_KEY_VERSION_LENGTH];
         byte[] keyByte = new byte[PasswordUtilConstant.DEFAULT_CIPHER_ALGORITHM_BLOCK_SIZE];
@@ -271,6 +291,11 @@ public class AesUtil {
         return keySpec;
     }
 
+    /**
+     * Get iv from pass file bytes
+     * @param passByte
+     * @return
+     */
     public static IvParameterSpec getIvFromPassByte(byte[] passByte) {
         byte[] versionByte = new byte[PasswordUtilConstant.DEFAULT_KEY_VERSION_LENGTH];
         byte[] keyByte = new byte[PasswordUtilConstant.DEFAULT_CIPHER_ALGORITHM_BLOCK_SIZE];
@@ -279,6 +304,12 @@ public class AesUtil {
         return new IvParameterSpec(iv);
     }
 
+    /**
+     * Select proper version based on the rule against available keys in cache
+     * @param rule
+     * @param hm
+     * @return
+     */
     public static String getKeyVersionByRule(String rule, HashMap<String, byte[]> hm) {
         String version = "000";
         LocalDate localDate = java.time.LocalDate.now();
