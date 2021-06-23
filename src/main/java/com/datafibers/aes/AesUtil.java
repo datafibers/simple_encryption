@@ -62,7 +62,7 @@ public class AesUtil {
         return Base64.getEncoder().encodeToString(ArrayUtils.addAll(keyVer.getBytes(), cipherText));
     }
 
-    public static String encryptWithVer(String input, String keyVer, HashMap<String, String> keyCache)
+    public static String encryptWithVer(String input, String keyVer, Map<String, String> keyCache)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         Base64.Decoder localDecoder = Base64.getDecoder();
@@ -71,14 +71,14 @@ public class AesUtil {
                 getIvFromPassByte(localDecoder.decode(keyCache.get(keyVer))), keyVer);
     }
 
-    public static String encryptWithVer(String input, HashMap<String, String> keyCache, String rule)
+    public static String encryptWithVer(String input, Map<String, String> keyCache, String rule)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         String keyVer = getKeyVersionByRule(rule, keyCache);
         return encryptWithVer(input,keyVer, keyCache);
     }
 
-    public static String encryptWithVer(String input, HashMap<String, String> keyCache)
+    public static String encryptWithVer(String input, Map<String, String> keyCache)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         return encryptWithVer(input, keyCache, PasswordUtilConstant.DEFAULT_KEY_ROTATION_RULE);
@@ -93,7 +93,7 @@ public class AesUtil {
         return new String(plainText);
     }
 
-    public static String decryptWithVer(String cipherText, HashMap<String, String> keyCache)
+    public static String decryptWithVer(String cipherText, Map<String, String> keyCache)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         Base64.Decoder localDecoder = Base64.getDecoder();
@@ -314,7 +314,7 @@ public class AesUtil {
      * @param hm
      * @return
      */
-    public static String getKeyVersionByRule(String rule, HashMap<String, String> hm) {
+    public static String getKeyVersionByRule(String rule, Map<String, String> hm) {
         String version = "000";
         LocalDate localDate = java.time.LocalDate.now();
 
