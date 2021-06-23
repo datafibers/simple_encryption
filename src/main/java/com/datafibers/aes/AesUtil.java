@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 /**
  * @author will
  */
+@SuppressWarnings("ALL")
 public class AesUtil {
 
     private final static Logger logger = Logger.getLogger(AesUtil.class.getName());
@@ -61,22 +62,23 @@ public class AesUtil {
         return Base64.getEncoder().encodeToString(ArrayUtils.addAll(keyVer.getBytes(), cipherText));
     }
 
-    public static String encryptWithVer(String input, String keyVer, HashMap<String, byte[]> keyCache)
+    public static String encryptWithVer(String input, String keyVer, HashMap<String, String> keyCache)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        Base64.Decoder localDecoder = Base64.getDecoder();
         return encryptWithVer(input,
-                getKeyFromPassByte(keyCache.get(keyVer)), getIvFromPassByte(keyCache.get(keyVer)), keyVer);
+                getKeyFromPassByte(localDecoder.decode(keyCache.get(keyVer))),
+                getIvFromPassByte(localDecoder.decode(keyCache.get(keyVer))), keyVer);
     }
 
-    public static String encryptWithVer(String input, HashMap<String, byte[]> keyCache, String rule)
+    public static String encryptWithVer(String input, HashMap<String, String> keyCache, String rule)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         String keyVer = getKeyVersionByRule(rule, keyCache);
-        return encryptWithVer(input,
-                getKeyFromPassByte(keyCache.get(keyVer)), getIvFromPassByte(keyCache.get(keyVer)), keyVer);
+        return encryptWithVer(input,keyVer, keyCache);
     }
 
-    public static String encryptWithVer(String input, HashMap<String, byte[]> keyCache)
+    public static String encryptWithVer(String input, HashMap<String, String> keyCache)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         return encryptWithVer(input, keyCache, PasswordUtilConstant.DEFAULT_KEY_ROTATION_RULE);
@@ -91,14 +93,30 @@ public class AesUtil {
         return new String(plainText);
     }
 
-    public static String decryptWithVer(String cipherText, HashMap<String, byte[]> keyCache)
+    public static String decryptWithVer(String cipherText, HashMap<String, String> keyCache)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        byte[] cipherTextDecoded = Base64.getDecoder().decode(cipherText);
+        Base64.Decoder localDecoder = Base64.getDecoder();
+        byte[] cipherTextDecoded = localDecoder.decode(cipherText);
         String keyVer = new String(Arrays.copyOf(cipherTextDecoded, PasswordUtilConstant.DEFAULT_KEY_VERSION_LENGTH));
         byte[] cipherTextWithoutVer = Arrays.copyOfRange(cipherTextDecoded, PasswordUtilConstant.DEFAULT_KEY_VERSION_LENGTH, cipherTextDecoded.length);
         Cipher cipher = Cipher.getInstance(PasswordUtilConstant.DEFAULT_CIPHER_PADDING_ALGORITHM);
-        cipher.init(Cipher.DECRYPT_MODE, getKeyFromPassByte(keyCache.get(keyVer)), getIvFromPassByte(keyCache.get(keyVer)));
+        cipher.init(Cipher.DECRYPT_MODE,
+                getKeyFromPassByte(localDecoder.decode(keyCache.get(keyVer))),
+                getIvFromPassByte(localDecoder.decode(keyCache.get(keyVer))));
+        byte[] plainText = cipher.doFinal(cipherTextWithoutVer);
+        return new String(plainText);
+    }
+
+    public static String decryptWithVer(String cipherText, String pass)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
+            InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        Base64.Decoder localDecoder = Base64.getDecoder();
+        byte[] passDecoded = localDecoder.decode(pass);
+        byte[] cipherTextDecoded = localDecoder.decode(cipherText);
+        byte[] cipherTextWithoutVer = Arrays.copyOfRange(cipherTextDecoded, PasswordUtilConstant.DEFAULT_KEY_VERSION_LENGTH, cipherTextDecoded.length);
+        Cipher cipher = Cipher.getInstance(PasswordUtilConstant.DEFAULT_CIPHER_PADDING_ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, getKeyFromPassByte(passDecoded), getIvFromPassByte(passDecoded));
         byte[] plainText = cipher.doFinal(cipherTextWithoutVer);
         return new String(plainText);
     }
@@ -219,17 +237,17 @@ public class AesUtil {
      */
     public static void genKeyFile(String keyFileName, int version) {
         try {
-            SecretKey localSecretKey = generateKey(PasswordUtilConstant.DEFAULT_AES_KEY_LENGTH);
+            SecretKey localSecretKey = generateKey();
             byte[] keyByte = localSecretKey.getEncoded();
             // generate vi
             byte[] iv = generateIv().getIV();
             byte[] versionByte = StringUtils.leftPad(String.valueOf(version), PasswordUtilConstant.DEFAULT_KEY_VERSION_LENGTH, "0").getBytes();
             // combine version, key, and iv
             byte[] passByte = ArrayUtils.addAll(ArrayUtils.addAll(versionByte, keyByte), iv);
-            Base64.Encoder localBASE64Encoder = Base64.getEncoder();
+            Base64.Encoder localEncoder = Base64.getEncoder();
             try {
                 PrintWriter localPrintWriter = new PrintWriter(new BufferedWriter(new FileWriter(keyFileName)));
-                localPrintWriter.println(new String(localBASE64Encoder.encode(passByte)));
+                localPrintWriter.println(new String(localEncoder.encode(passByte)));
                 localPrintWriter.close();
             } catch (IOException ioe) {
                 logger.log(Level.SEVERE, "Error: writing password file.", ioe);
@@ -241,39 +259,25 @@ public class AesUtil {
         }
     }
 
-    /**
-     * Read and cache all pass files
-     * @param pwdFilePath
-     * @param hm
-     * @throws IOException
-     */
-    public static void cacheKeyFromFile(final String pwdFilePath, HashMap<String, byte[]> hm) throws IOException {
+    public static HashMap<String, String> cacheKeyFromFolders(final String pwdFileFolder) throws IOException {
+        @SuppressWarnings("AlibabaCollectionInitShouldAssignCapacity") HashMap<String, String> hm = new HashMap<>();
+        Base64.Decoder localDecoder = Base64.getDecoder();
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(conf);
-        byte[] versionByte = new byte[PasswordUtilConstant.DEFAULT_KEY_VERSION_LENGTH];
-        try {
-            Base64.Decoder localBASE64Decoder = Base64.getDecoder();
-            BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(fs.open(new Path(pwdFilePath))));
-            byte[] keyArrayOfByte = localBASE64Decoder.decode(localBufferedReader.readLine());
-            versionByte = Arrays.copyOf(keyArrayOfByte, versionByte.length);
-            localBufferedReader.close();
-            hm.put(new String(versionByte), keyArrayOfByte);
-        } catch (IOException ioe) {
-            System.out.println("Error: cannot read from password file.");
-        }
-    }
-
-    public static void cacheKeyFromFolders(final String pwdFileFolder, HashMap<String, byte[]> hm) throws IOException {
-        Configuration conf = new Configuration();
-        FileSystem fs = FileSystem.get(conf);
-
         Arrays.stream(fs.listStatus(new Path(pwdFileFolder))).forEach(x -> {
             try {
-                cacheKeyFromFile(x.getPath().toString(), hm);
+                BufferedReader localBufferedReader =
+                        new BufferedReader(new InputStreamReader(fs.open(new Path(x.getPath().toString()))));
+                String encodedPass = localBufferedReader.readLine();
+                byte[] keyArrayOfByte = localDecoder.decode(encodedPass);
+                localBufferedReader.close();
+                hm.put(new String(Arrays.copyOf(keyArrayOfByte, PasswordUtilConstant.DEFAULT_KEY_VERSION_LENGTH)), encodedPass);
+
             } catch (IOException ioe) {
-                System.out.println("Error: cannot read from password file.");
+                logger.log(Level.SEVERE,"Error: cannot read from password file.");
             }
         });
+        return hm;
     }
 
     /**
@@ -310,17 +314,17 @@ public class AesUtil {
      * @param hm
      * @return
      */
-    public static String getKeyVersionByRule(String rule, HashMap<String, byte[]> hm) {
+    public static String getKeyVersionByRule(String rule, HashMap<String, String> hm) {
         String version = "000";
         LocalDate localDate = java.time.LocalDate.now();
 
-        if (rule == "always") {
+        if (rule.equalsIgnoreCase("always")) {
             version = hm.keySet().toArray()[new Random().nextInt(hm.keySet().toArray().length)].toString();
-        } else if (rule == "day") {
+        } else if (rule.equalsIgnoreCase("day")) {
             version = hm.keySet().toArray()[localDate.getDayOfMonth() % hm.keySet().toArray().length].toString();
-        } else if (rule == "month") {
+        } else if (rule.equalsIgnoreCase("month")) {
             version = hm.keySet().toArray()[localDate.getMonthValue() % hm.keySet().toArray().length].toString();
-        } else if (rule == "year") {
+        } else if (rule.equalsIgnoreCase("year")) {
             version = hm.keySet().toArray()[localDate.getYear() % hm.keySet().toArray().length].toString();
         }
         return version;
@@ -339,5 +343,4 @@ public class AesUtil {
             genKeyFile(args[0] + "/key_" + i, i);
         }
     }
-
 }
