@@ -1,32 +1,40 @@
 package com.datafibers.aes
 
+import com.google.gson.JsonObject
+
 import java.util.Random
 
 /**
  * This is KES/MinIO simulation.
  * KES sends two keys (index_key, secret_key)
- * secret_key is used for encryption
- * index_key is kept with cipher data and used for looking up secret key for decryption
+ * plaintext is used for encryption
+ * ciphertext is kept with cipher data and used for looking up secret key for decryption
  */
 object FakeKes {
 
   val keys = Map(
-    "index_key000" -> "secret_key000", "index_key001" -> "secret_key001", "index_key002" -> "secret_key002",
-    "index_key003" -> "secret_key003", "index_key004" -> "secret_key004", "index_key005" -> "secret_key005"
+    "ciphertext000" -> "plaintext000", "ciphertext001" -> "plaintext001", "ciphertext002" -> "plaintext002",
+    "ciphertext003" -> "plaintext003", "ciphertext004" -> "plaintext004", "ciphertext005" -> "plaintext005"
   )
 
-  def getKesKeys() = {
-    val index = "index_key00" + new Random().nextInt(keys.keySet.size)
-    index + "," + keys.getOrElse(index, "")
+  def generateKesKeys() = {
+    val index = "ciphertext00" + new Random().nextInt(keys.keySet.size)
+    val response = new JsonObject
+    response.addProperty("plaintext", keys.getOrElse(index, ""))
+    response.addProperty("ciphertext", index)
+    response
   }
 
-  def getKesSecret(secretKey: String) = {
-    keys.getOrElse(secretKey, "")
+  def fetchKesSecret(indexKey: String) = {
+    val response = new JsonObject
+    response.addProperty("plaintext", keys.getOrElse(indexKey, ""))
+    response.addProperty("ciphertext", indexKey)
+    response
   }
 
   // Main method
   def main(args: Array[String]) {
-    println(getKesKeys)
-    println(getKesSecret("index_key001"))
+    println(generateKesKeys)
+    println(fetchKesSecret("ciphertext001"))
   }
 }
