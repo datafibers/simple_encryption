@@ -10,7 +10,10 @@ import java.util.Random
  */
 object FakeKes {
 
-  val keys = Map("index_key000" -> "secret_key000", "index_key001" -> "secret_key001", "index_key002" -> "secret_key002")
+  val keys = Map(
+    "index_key000" -> "secret_key000", "index_key001" -> "secret_key001", "index_key002" -> "secret_key002",
+    "index_key003" -> "secret_key003", "index_key004" -> "secret_key004", "index_key005" -> "secret_key005"
+  )
 
   def getKesKeys() = {
     val index = "index_key00" + new Random().nextInt(keys.keySet.size)
