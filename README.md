@@ -10,31 +10,32 @@ java -jar simple_encryption.jar AESUtil dev 31
 ```
 2. Distribute the file to where application can access, such as HDFS or GitHub with Spring Cloud Config.
 
-## Encryption from Application
-1. Read all key files to keyCache with
+## Encryption and Decryption from Application
+1. Read all key files to keyCache with encoded
 ```scala
-cacheKeyFromFolders("key", keyCache)
+val keyCache = cacheKeyFromFolders("key")
 ```   
-2. Encrypt the data with encryptWithVer which also decide with version to use
+2. Encrypt the data (string) with rule-based version of keys
 ```scala
 val cipherText = AesUtil.encryptWithVer(input, keyCache)
 ```
-
-## Encryption from Spark
-1. Cache the keyfiles and choose which key version to use with rules
-2. Get the key and iv as string, then add it to the spark.config, such as sparkConf.set
-3. Build spark session with the config
-4. call encrypt(df, version, key, iv) to encrypt the dataframe
-
-## Decryption from Applications
-1. Read all key files to keyCache with
-```scala
-val keyCache = new java.util.HashMap[String, Array[Byte]]()
-cacheKeyFromFolders("key", keyCache)
-```   
-2. Call decryptWithVer(cipher, keyCache) to decrypt the data
+3. Decrypt the data with the version of keys in cipher
 ```scala
 val plainText = AesUtil.decryptWithVer(cipherText, keyCache)
+```
+
+## Encryption and Decryption from Spark
+1. Cache the keyfiles and choose which key version to use with rules
+```scala
+val keyCache = cacheKeyFromFolders("key")
+```
+2. Encrypt the dataframe (df) string column with rule-based version of keys
+```scala
+val encryptDf = dsEncrypt(df, "email,address", keyCache)
+```   
+3. Decrypt the dataframe (encryptDf) with the version of keys in cipher
+```scala
+val decryptDf = dsDecrypt(encryptDf, "email,address", keyCache)
 ```
 
 ## Key Rotation
@@ -52,15 +53,15 @@ val plainText = AesUtil.decryptWithVer(cipherText, keyCache)
 This usually applies to your data has retention period.
 4. If new keys are added, do not reuse the old version as follows.
 It creates additional 5 keys starting from version 31
-```java
+```shell
 java -jar simple_encryption.jar AESUtil dev 5 31 
 ```
 
 ## Format
 * The default key file format is version (3 byte), key (16 byte/128 bit), and iv (16 byte/128 bit).
-* The cipher text format is version (3 byte), cipher text.
+* The cipher text format is key_version (3 byte), cipher text.
 
 ## TODO
 - [ ] Add support to for key generation dynamically from DES/KMS
-- [ ] Add spark decryption function
-- [ ] Add performance test cases
+- [X] Add spark decryption function
+- [X] Add performance test cases
