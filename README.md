@@ -63,5 +63,6 @@ java -jar simple_encryption.jar AESUtil dev 5 31
 
 ## TODO
 - [ ] Add support to for key generation dynamically from DES/KMS
+- [ ] Add support encryption with hashing so that data can also be used as join conditions 
 - [X] Add spark decryption function
 - [X] Add performance test cases
