@@ -259,7 +259,7 @@ public class AesUtil {
         }
     }
 
-    public static HashMap<String, String> cacheKeyFromFolders(final String pwdFileFolder) throws IOException {
+    public static Map<String, String> cacheKeyFromFolders(final String pwdFileFolder) throws IOException {
         @SuppressWarnings("AlibabaCollectionInitShouldAssignCapacity") HashMap<String, String> hm = new HashMap<>();
         Base64.Decoder localDecoder = Base64.getDecoder();
         Configuration conf = new Configuration();
