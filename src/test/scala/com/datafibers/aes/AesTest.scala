@@ -50,10 +50,10 @@ class AesTest extends FunSuite with BeforeAndAfterEach with SparkUDF {
     val df = spark.read.format("csv").option("delimiter", "|").option("header", "true").load("src/test/resources/test_data.txt")
     val keyCache = cacheKeyFromFolders("key")
 
-    val encryptDf = dsEncrypt(df, "sin,name", keyCache)
-    encryptDf.show(false)
+    val decryptDf = df
+      .transform(dsEncrypt("sin", keyCache))
+      .transform(dsDecrypt("sin", keyCache))
 
-    val decryptDf = dsDecrypt(encryptDf, "sin,name", keyCache)
     decryptDf.show(false)
   }
 
