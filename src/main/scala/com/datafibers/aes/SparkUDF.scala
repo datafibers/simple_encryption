@@ -14,7 +14,7 @@ trait SparkUDF {
     encryptWithVer(plainText, getKeyFromPassByte(pass), getIvFromPassByte(pass), keyVer)
   }
 
-  def dsEncrypt(inputDF: DataFrame, encryptCol: String, keyCache: Map[String, String])(implicit spark: SparkSession): DataFrame = {
+  def dsEncrypt(inputDF: DataFrame, encryptCol: String, keyCache: Map[String, String]): DataFrame = {
     val keyVer = getKeyVersionByRule(PasswordUtilConstant.DEFAULT_KEY_ROTATION_RULE, keyCache)
     val passDecoded = Base64.getDecoder.decode(keyCache.get(keyVer))
     inputDF.columns.foldLeft(inputDF)((r, c) => {
@@ -22,6 +22,10 @@ trait SparkUDF {
         r.withColumn(c, encryptDataRow(col(c), lit(keyVer), lit(passDecoded)))
       } else r
     })
+  }
+
+  def dsEncrypt(encryptCol: String, keyCache: Map[String, String])(inputDF: DataFrame): DataFrame = {
+    dsEncrypt(inputDF, encryptCol, keyCache)
   }
 
   val decryptDataRow = udf {(cipherText: String, pass: String) =>
@@ -46,6 +50,10 @@ trait SparkUDF {
         r.withColumn(c, decryptDataRow(col(c), col("pass")))
       } else r
     }).drop("key_version", "pass")
+  }
+
+  def dsDecrypt(decryptCol: String, keyCache: Map[String, String])(inputDF: DataFrame)(implicit spark: SparkSession): DataFrame = {
+    dsDecrypt(inputDF, decryptCol, keyCache)
   }
 
 }

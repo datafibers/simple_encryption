@@ -37,6 +37,12 @@ val encryptDf = dsEncrypt(df, "email,address", keyCache)
 ```scala
 val decryptDf = dsDecrypt(encryptDf, "email,address", keyCache)
 ```
+4. You can also use chained call in spark
+```scala
+val decryptDf = df
+  .transform(dsEncrypt("sin", keyCache))
+  .transform(dsDecrypt("sin", keyCache))
+```
 
 ## Key Rotation
 1. The key can rotate from the encryption side as follows
