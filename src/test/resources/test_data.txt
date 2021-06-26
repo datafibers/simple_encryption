@@ -1,4 +1,4 @@
-sin|name|email
-921-090-098|will|will@gmail.com
-921-090-091|mike|mike@gmail.com
-921-090-092|jack|jack@gmail.com
+sin,name,email
+921-090-098,will,will@gmail.com
+921-090-091,mike,mike@gmail.com
+921-090-092,jack,jack@gmail.com

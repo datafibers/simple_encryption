@@ -24,7 +24,7 @@ class AesTest extends FunSuite with BeforeAndAfterEach with SparkUDF {
 
   ignore ("Encryption using Spark and decrypt locally") {
     val keyCache = cacheKeyFromFolders("key")
-    val df = spark.read.format("csv").option("delimiter", "|").option("header", "true").load("src/test/resources/test_data.txt")
+    val df = spark.read.option("header", "true").csv("src/test/resources/test_data.txt")
     val plainText = df.select("sin").where("name = 'will'").collect.map(row => row.getString(0)).head
     df.show
 
@@ -38,7 +38,7 @@ class AesTest extends FunSuite with BeforeAndAfterEach with SparkUDF {
   }
 
   ignore ("Performance test - load data, encrypt and decrypt data.") {
-    val df = spark.read.format("csv").option("delimiter", ",").option("header", "true").load("src/test/resources/mock_data_set.csv")
+    val df = spark.read.option("header", "true").csv("src/test/resources/mock_data_set.csv")
     spark.time(df.count)
     val keyCache = cacheKeyFromFolders("key")
     val encryptDf = dsEncrypt(df, "other", keyCache)
@@ -47,7 +47,7 @@ class AesTest extends FunSuite with BeforeAndAfterEach with SparkUDF {
   }
 
   test ("Test spark decryption and encryption") {
-    val df = spark.read.format("csv").option("delimiter", "|").option("header", "true").load("src/test/resources/test_data.txt")
+    val df = spark.read.option("header", "true").csv("src/test/resources/test_data.txt")
     val keyCache = cacheKeyFromFolders("key")
 
     val decryptDf = df
